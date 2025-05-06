@@ -1,0 +1,344 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+class Node {
+public:
+    int data;
+    Node* left;
+    Node* right;
+    Node(int value) : data(value), left(nullptr), right(nullptr) {}
+};
+
+// Manual Stack implementation
+class Stack {
+    Node* arr[100];
+    int top1 = -1;
+public:
+    Node* top() {
+        return arr[top1];
+    }
+    void push(Node* node) {
+        arr[++top1] = node;
+    }
+    bool isempty() {
+        return top1 == -1;
+    }
+    Node* pop() {
+        if (!isempty()) {
+            return arr[top1--];
+        }
+        return nullptr;
+    }
+};
+
+// Manual Queue implementation
+class Queue {
+    Node* arr[100];
+    int front = 0, rear = 0;
+public:
+    void enqueue(Node* node) {
+        arr[rear++] = node;
+    }
+    Node* dequeue() {
+        if (!isEmpty()) return arr[front++];
+        return nullptr;
+    }
+    bool isEmpty() {
+        return front == rear;
+    }
+};
+
+class BT {
+private:
+    Node* root;
+
+    void copy(Node*& dest, Node* src) {
+        if (src == nullptr) return;
+        dest = new Node(src->data);
+        copy(dest->left, src->left);
+        copy(dest->right, src->right);
+    }
+
+    void inorderRecursive(Node* node) {
+        if (node) {
+            inorderRecursive(node->left);
+            cout << node->data << " ";
+            inorderRecursive(node->right);
+        }
+    }
+
+    void preorderRecursive(Node* node) {
+        if (node) {
+            cout << node->data << " ";
+            preorderRecursive(node->left);
+            preorderRecursive(node->right);
+        }
+    }
+
+    void postorderRecursive(Node* node) {
+        if (node) {
+            postorderRecursive(node->left);
+            postorderRecursive(node->right);
+            cout << node->data << " ";
+        }
+    }
+
+    int heightRecursive(Node* node) {
+        if (node == nullptr) return -1;
+        int leftHeight = heightRecursive(node->left);
+        int rightHeight = heightRecursive(node->right);
+        return max(leftHeight, rightHeight) + 1;
+    }
+
+    int countLeavesRecursive(Node* node) {
+        if (node == nullptr) return 0;
+        if (!node->left && !node->right) return 1;
+        return countLeavesRecursive(node->left) + countLeavesRecursive(node->right);
+    }
+
+    int countInternalNodesRecursive(Node* node) {
+        if (node == nullptr || (!node->left && !node->right)) return 0;
+        return 1 + countInternalNodesRecursive(node->left) + countInternalNodesRecursive(node->right);
+    }
+
+public:
+    BT() : root(nullptr) {}
+
+    void createBT(const vector<int>& values) {
+        for (int value : values) {
+            insert(value);
+        }
+    }
+
+    // Insertion using queue
+    void insert(int value) {
+        if (!root) {
+            root = new Node(value);
+            return;
+        }
+
+        Queue q;
+        q.enqueue(root);
+
+        while (!q.isEmpty()) {
+            Node* current = q.dequeue();
+            if (!current->left) {
+                current->left = new Node(value);
+                return;
+            } else {
+                q.enqueue(current->left);
+            }
+
+            if (!current->right) {
+                current->right = new Node(value);
+                return;
+            } else {
+                q.enqueue(current->right);
+            }
+        }
+    }
+
+    void MirrorTree(Node* node) {
+        if (node == nullptr) return;
+        swap(node->left, node->right);
+        MirrorTree(node->left);
+        MirrorTree(node->right);
+    }
+
+    void Mirror() {
+        MirrorTree(root);
+    }
+
+    int height() {
+        return heightRecursive(root);
+    }
+
+    int countLeaves() {
+        return countLeavesRecursive(root);
+    }
+
+    int countInternalNodes() {
+        return countInternalNodesRecursive(root);
+    }
+
+    void eraseTree(Node* node) {
+        if (node == nullptr) return;
+        eraseTree(node->left);
+        eraseTree(node->right);
+        delete node;
+    }
+
+    void eraseTree() {
+        eraseTree(root);
+        root = nullptr;
+    }
+
+    void inorder() {
+        cout << "Inorder Traversal: ";
+        inorderRecursive(root);
+        cout << endl;
+    }
+
+    void preorder() {
+        cout << "Preorder Traversal: ";
+        preorderRecursive(root);
+        cout << endl;
+    }
+
+    void postorder() {
+        cout << "Postorder Traversal: ";
+        postorderRecursive(root);
+        cout << endl;
+    }
+
+    void NonRecursive_Preorder() {
+        cout << "Non Recursive Preorder: ";
+        Node* node = root;
+        Stack stack;
+        while (node || !stack.isempty()) {
+            while (node) {
+                cout << node->data << " ";
+                if (node->right) stack.push(node->right);
+                node = node->left;
+            }
+            if (!stack.isempty()) {
+                node = stack.pop();
+            }
+        }
+        cout << endl;
+    }
+
+    void NonRecursive_inorder() {
+        cout << "Non Recursive Inorder: ";
+        Node* node = root;
+        Stack stack;
+        while (node || !stack.isempty()) {
+            while (node) {
+                stack.push(node);
+                node = node->left;
+            }
+            if (!stack.isempty()) {
+                node = stack.pop();
+                cout << node->data << " ";
+                node = node->right;
+            }
+        }
+        cout << endl;
+    }
+
+    void NonRecursive_postorder() {
+        cout << "Non Recursive Postorder: ";
+        Node* current = root;
+        Stack stack;
+        Node* lastVisited = nullptr;
+        while (!stack.isempty() || current) {
+            if (current) {
+                stack.push(current);
+                current = current->left;
+            } else {
+                Node* peekNode = stack.top();
+                if (peekNode->right && lastVisited != peekNode->right) {
+                    current = peekNode->right;
+                } else {
+                    cout << peekNode->data << " ";
+                    lastVisited = stack.pop();
+                }
+            }
+        }
+        cout << endl;
+    }
+
+    BT& operator=(const BT& src) {
+        if (this == &src) return *this;
+        copy(root, src.root);
+        return *this;
+    }
+};
+
+int main() {
+    BT tree;
+    int choice;
+    vector<int> values;
+
+    do {
+        cout << "\nBinary Tree Operations:\n";
+        cout << "1. Create Binary Tree\n";
+        cout << "2. Inorder Traversal\n";
+        cout << "3. Preorder Traversal\n";
+        cout << "4. Postorder Traversal\n";
+        cout << "5. Swap Left and Right Pointers\n";
+        cout << "6. Height of Tree\n";
+        cout << "7. Count Leaves\n";
+        cout << "8. Count Internal Nodes\n";
+        cout << "9. Erase Tree\n";
+        cout << "10. NonRecursive Preorder Traversal\n";
+        cout << "11. NonRecursive Inorder Traversal\n";
+        cout << "12. NonRecursive Postorder Traversal\n";
+        cout << "13. Copy Binary Tree\n";
+        cout << "14. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+        switch (choice) {
+            case 1: {
+                int n, val;
+                cout << "Enter number of elements to insert: ";
+                cin >> n;
+                cout << "Enter elements: ";
+                for (int i = 0; i < n; ++i) {
+                    cin >> val;
+                    values.push_back(val);
+                }
+                tree.createBT(values);
+                break;
+            }
+            case 2:
+                tree.inorder();
+                break;
+            case 3:
+                tree.preorder();
+                break;
+            case 4:
+                tree.postorder();
+                break;
+            case 5:
+                tree.Mirror();
+                cout << "Swapped Left and Right pointers in the tree.\n";
+                tree.inorder();
+                break;
+            case 6:
+                cout << "Height of the tree: " << tree.height() << endl;
+                break;
+            case 7:
+                cout << "Number of leaves: " << tree.countLeaves() << endl;
+                break;
+            case 8:
+                cout << "Number of internal Nodes: " << tree.countInternalNodes() << endl;
+                break;
+            case 9:
+                tree.eraseTree();
+                cout << "Tree erased.\n";
+                break;
+            case 10:
+                tree.NonRecursive_Preorder();
+                break;
+            case 11:
+                tree.NonRecursive_inorder();
+                break;
+            case 12:
+                tree.NonRecursive_postorder();
+                break;
+            case 13:
+                cout << "Copying Tree in Tree2: ";
+                { BT tree2 = tree; tree2.inorder(); }
+                break;
+            case 14:
+                cout << "Exiting...\n";
+                break;
+            default:
+                cout << "Invalid choice!\n";
+        }
+    } while (choice != 14);
+
+    return 0;
+}
