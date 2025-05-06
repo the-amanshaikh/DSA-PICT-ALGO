@@ -1,0 +1,286 @@
+#include <iostream>
+using namespace std;
+
+class Node {
+    string word;
+    string meaning;
+    Node* left;
+    Node* right;
+
+public:
+    Node() : word(""), meaning(""), left(nullptr), right(nullptr) {}
+    Node(string w, string m) : word(w), meaning(m), left(nullptr), right(nullptr) {}
+    friend class Dictionary;
+};
+
+// manual stack for Node*, using top1 as in your style
+class Stack {
+    Node* arr[100];
+    int top1 = -1;
+public:
+    void push(Node* n) {
+        if (top1 < 99) {
+            arr[++top1] = n;
+        }
+    }
+    Node* pop() {
+        if (top1 >= 0) {
+            return arr[top1--];
+        }
+        return nullptr;
+    }
+    Node* top() {
+        if (top1 >= 0) return arr[top1];
+        return nullptr;
+    }
+    bool isempty() {
+        return top1 == -1;
+    }
+};
+
+class Dictionary {
+    Node* root;
+
+public:
+    Dictionary() : root(nullptr) {}
+
+    // insert new word/meaning into BST
+    void insert() {
+        string w, m;
+        cout << "Enter new Word: ";
+        cin >> w;
+        cout << "Enter meaning: ";
+        cin.ignore();
+        getline(cin, m);
+
+        Node* newNode = new Node(w, m);
+        if (!root) {
+            root = newNode;
+            cout << "Word Added to Dictionary!\n";
+            return;
+        }
+
+        Node* cur = root;
+        Node* parent = nullptr;
+        while (cur) {
+            parent = cur;
+            if (w < cur->word)
+                cur = cur->left;
+            else if (w > cur->word)
+                cur = cur->right;
+            else {
+                cout << "Word already exists!\n";
+                delete newNode;
+                return;
+            }
+        }
+        if (w < parent->word) parent->left = newNode;
+        else parent->right = newNode;
+        cout << "Word Added to Dictionary!\n";
+    }
+
+    // recursive inorder (ascending)
+    void inorder(Node* t) {
+        if (!t) return;
+        inorder(t->left);
+        cout << t->word << " = " << t->meaning << "\n";
+        inorder(t->right);
+    }
+    void inorder() {
+        cout << "Words in Ascending Order:\n";
+        inorder(root);
+    }
+
+    // recursive postorder (descending)
+    void postorder(Node* t) {
+        if (!t) return;
+        postorder(t->left);
+        postorder(t->right);
+        cout << t->word << " = " << t->meaning << "\n";
+    }
+    void postorder() {
+        cout << "Words in Descending Order:\n";
+        postorder(root);
+    }
+
+    // search returns number of comparisons
+    int search(const string& key) {
+        Node* cur = root;
+        int comps = 0;
+        while (cur) {
+            comps++;
+            if (key == cur->word) {
+                cout << cur->word << " = " << cur->meaning << "\n";
+                return comps;
+            }
+            cur = (key < cur->word ? cur->left : cur->right);
+        }
+        cout << "Word not found.\n";
+        return comps;
+    }
+
+    // update meaning
+    void update(const string& key) {
+        Node* cur = root;
+        while (cur) {
+            if (key == cur->word) {
+                cout << "Old meaning: " << cur->meaning << "\n";
+                cout << "Enter new meaning: ";
+                cin.ignore();
+                string m;
+                getline(cin, m);
+                cur->meaning = m;
+                cout << "Meaning updated.\n";
+                return;
+            }
+            cur = (key < cur->word ? cur->left : cur->right);
+        }
+        cout << "Word not found.\n";
+    }
+
+    // delete node wrapper
+    void deleteNode(const string& key) {
+        root = deleteRec(root, key);
+    }
+
+private:
+    Node* findMin(Node* t) {
+        while (t && t->left) t = t->left;
+        return t;
+    }
+
+    Node* deleteRec(Node* t, const string& key) {
+        if (!t) {
+            cout << "Word not found.\n";
+            return t;
+        }
+        if (key < t->word) {
+            t->left = deleteRec(t->left, key);
+        }
+        else if (key > t->word) {
+            t->right = deleteRec(t->right, key);
+        }
+        else {
+            // one or zero child
+            if (!t->left) {
+                Node* tmp = t->right;
+                delete t;
+                return tmp;
+            }
+            else if (!t->right) {
+                Node* tmp = t->left;
+                delete t;
+                return tmp;
+            }
+            // two children
+            Node* succ = findMin(t->right);
+            t->word = succ->word;
+            t->meaning = succ->meaning;
+            t->right = deleteRec(t->right, succ->word);
+        }
+        return t;
+    }
+
+public:
+    // iterative inorder using manual stack
+    void inorderIterative() {
+        cout << "Iterative Inorder: ";
+        Stack st;
+        Node* cur = root;
+        while (cur || !st.isempty()) {
+            while (cur) {
+                st.push(cur);
+                cur = cur->left;
+            }
+            cur = st.pop();
+            cout << cur->word << " ";
+            cur = cur->right;
+        }
+        cout << "\n";
+    }
+
+    // iterative preorder using manual stack
+    void preorderIterative() {
+        cout << "Iterative Preorder: ";
+        if (!root) { cout << "\n"; return; }
+        Stack st;
+        st.push(root);
+        while (!st.isempty()) {
+            Node* n = st.pop();
+            cout << n->word << " ";
+            if (n->right) st.push(n->right);
+            if (n->left)  st.push(n->left);
+        }
+        cout << "\n";
+    }
+
+    // iterative postorder using two manual stacks
+    void postorderIterative() {
+        cout << "Iterative Postorder: ";
+        if (!root) { cout << "\n"; return; }
+        Stack s1, s2;
+        s1.push(root);
+        while (!s1.isempty()) {
+            Node* n = s1.pop();
+            s2.push(n);
+            if (n->left)  s1.push(n->left);
+            if (n->right) s1.push(n->right);
+        }
+        while (!s2.isempty()) {
+            Node* n = s2.pop();
+            cout << n->word << " ";
+        }
+        cout << "\n";
+    }
+};
+
+int main() {
+    Dictionary dict;
+    int choice;
+    string key;
+
+    cout << "Practical No 1: Dictionary using Binary Search Tree\n";
+    do {
+        cout << "\n--- MENU ---\n";
+        cout << "1. View Words (Ascending)\n";
+        cout << "2. View Words (Descending)\n";
+        cout << "3. Add Word\n";
+        cout << "4. Search Word\n";
+        cout << "5. Update Word\n";
+        cout << "6. Delete Word\n";
+        cout << "7. Inorder Iterative\n";
+        cout << "8. Preorder Iterative\n";
+        cout << "9. Postorder Iterative\n";
+        cout << "10. Exit\n";
+        cout << "Enter choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: dict.inorder(); break;
+            case 2: dict.postorder(); break;
+            case 3: dict.insert(); break;
+            case 4:
+                cout << "Enter word to search: ";
+                cin >> key;
+                cout << "Comparisons: " << dict.search(key) << "\n";
+                break;
+            case 5:
+                cout << "Enter word to update: ";
+                cin >> key;
+                dict.update(key);
+                break;
+            case 6:
+                cout << "Enter word to delete: ";
+                cin >> key;
+                dict.deleteNode(key);
+                break;
+            case 7: dict.inorderIterative(); break;
+            case 8: dict.preorderIterative(); break;
+            case 9: dict.postorderIterative(); break;
+            case 10: cout << "Exiting...\n"; break;
+            default:  cout << "Invalid choice.\n"; break;
+        }
+    } while (choice != 10);
+
+    return 0;
+}
